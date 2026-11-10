@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UltBot Manager</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+    <div class="logo">
+        <div class="logo-icon">⚡</div>
+        <div class="logo-text">Ult<span>Bot</span></div>
+    </div>
+
+    <div class="header-center">
+        <button class="tab-btn active" id="tabBots" onclick="switchTab('bots')">🤖 Боты</button>
+        <button class="tab-btn" id="tabManage" onclick="switchTab('manage')">⚙️ Управление</button>
+        <button class="tab-btn" id="tabProxy" onclick="switchTab('proxy')">🌐 Прокси</button>
+        <button class="tab-btn" id="tabSettings" onclick="switchTab('settings')">🛠️ Настройки</button>
+        <button class="tab-btn" id="tabPackets" onclick="switchTabWithPackets('packets')">📦 Packet Sender</button>
+    </div>
+
+    <div class="header-right">
+        <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="Переключить тему">🌙</button>
+        <button class="btn btn-primary" onclick="openModal('add')">+ Аккаунт</button>
+    </div>
+</header>
+
+<!-- MANAGE PANEL -->
+<div id="managePanel" class="panel-section">
+    <div class="panel-inner">
+        <h2>⚙️ Управление всеми ботами</h2>
+        <div class="manage-server">
+            <input id="bulkHost" placeholder="Хост сервера">
+            <input id="bulkPort" placeholder="Порт" style="width:90px">
+            <select id="bulkVersion">
+                <option>1.16.5</option><option>1.17.1</option><option>1.18.2</option>
+                <option>1.19.4</option><option>1.20.1</option><option>1.20.4</option>
+                <option>1.21</option>
+            </select>
+            <button class="btn btn-success" onclick="bulkConnect()">▶ Подключить всех</button>
+            <button class="btn btn-danger" onclick="bulkDisconnect()">■ Отключить всех</button>
+        </div>
+
+        <div class="manage-actions" style="margin-top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;">
+                <input type="checkbox" id="bulkAutoJoin">
+                Авто-заход при обрыве связи
+            </label>
+            <button class="btn btn-ghost btn-sm" onclick="setBulkAutoReconnect(true)">Вкл. выбранным</button>
+            <button class="btn btn-ghost btn-sm" onclick="setBulkAutoReconnect(false)">Выкл. выбранным</button>
+        </div>
+
+        <div class="manage-actions" style="margin-top:12px;display:flex;flex-direction:column;gap:8px;">
+            <div style="display:flex;gap:5px;">
+                <input id="bulkChatInput" placeholder="Сообщение всем..." style="flex:1;padding:5px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;color:var(--text);">
+                <button class="btn btn-primary" onclick="sendBulkAction('chat', {text: document.getElementById('bulkChatInput').value})">Отправить</button>
+            </div>
+            <div class="bulk-controls">
+                <span style="font-size:12px;">🔁 Авто-отправка:</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="bulkChatLoopToggle" onchange="toggleBulkChatLoop()">
+                    <span class="toggle-slider"></span>
+                </label>
+                <input id="bulkChatLoopInput" placeholder="Команда или сообщение" style="flex:1;min-width:140px;padding:5px;background:var(--bg4);border:1px solid var(--border);border-radius:6px;color:var(--text);">
+                <input type="number" id="bulkChatLoopDelay" placeholder="Задержка мс" value="5000" min="1000" step="500" style="width:100px;padding:5px;background:var(--bg4);border:1px solid var(--border);border-radius:6px;color:var(--text);">
+                <span id="bulkChatLoopStatus" style="font-size:11px;color:var(--text2);">Выкл.</span>
+            </div>
+            <div style="display:flex;gap:5px;flex-wrap:wrap;">
+                <button class="btn btn-ghost btn-sm" onclick="sendBulkAction('jump')">⬆️ Прыжок</button>
+                <button class="btn btn-ghost btn-sm" onclick="sendBulkAction('attack')">⚔️ Атака</button>
+                <button class="btn btn-ghost btn-sm" onclick="sendBulkAction('useItem', {state: true})">🖱 ПКМ зажать</button>
+                <button class="btn btn-ghost btn-sm" onclick="sendBulkAction('useItem', {state: false})">🖱 ПКМ отпустить</button>
+            </div>
+        </div>
+
+        <div class="bulk-controls" style="margin-top:8px;">
+            <span style="font-size:12px;">📦 Клик по слоту:</span>
+            <input type="number" id="bulkSlotInput" placeholder="Слот" style="width:70px;padding:5px;background:var(--bg4);border:1px solid var(--border);border-radius:6px;color:var(--text);">
+            <button class="btn btn-primary btn-sm" onclick="bulkClickSlot()">Кликнуть всем</button>
+        </div>
+
+        <div class="bulk-controls" style="margin-top:6px;">
+            <span style="font-size:12px;">🖱 Кликер:</span>
+            <select id="bulkClickerBtn" style="padding:5px;background:var(--bg4);border:1px solid var(--border);border-radius:6px;color:var(--text);">
+                <option value="0">ЛКМ</option>
+                <option value="1">ПКМ</option>
+            </select>
+            <input type="number" id="bulkClickerDelay" placeholder="Задержка мс" value="600" style="width:90px;padding:5px;background:var(--bg4);border:1px solid var(--border);border-radius:6px;color:var(--text);">
+            <button class="btn btn-success btn-sm" onclick="bulkClicker(true)">▶ Старт</button>
+            <button class="btn btn-danger btn-sm" onclick="bulkClicker(false)">■ Стоп</button>
+        </div>
+
+        <div id="bulkList" class="bulk-list"></div>
+    </div>
+</div>
+
+<!-- PROXY TAB -->
+<div id="proxyTab">
+    <div class="panel-inner">
+        <h2>🌐 Пул прокси</h2>
+        <p style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.6;">
+            Вставьте прокси в формате <code style="background:var(--bg3);padding:1px 5px;border-radius:4px;">ip:port:user:pass</code> или <code style="background:var(--bg3);padding:1px 5px;border-radius:4px;">ip:port</code> — по одному на строку.<br>
+            На каждый прокси не более <b>3 ботов</b>. При подключении прокси назначается автоматически.
+        </p>
+        <textarea id="proxyInput" rows="8" placeholder="213.139.222.109:9216:user:pass&#10;1.2.3.4:1080&#10;socks5://user:pass@5.6.7.8:1080"
+                  style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:10px;font-family:monospace;font-size:12px;resize:vertical;line-height:1.5;"></textarea>
+        <div style="display:flex;gap:8px;margin-top:8px;align-items:center;">
+            <button class="btn btn-primary" onclick="saveProxies()">💾 Сохранить</button>
+            <button class="btn btn-ghost" onclick="loadProxiesUI()">🔄 Обновить</button>
+            <span id="proxySaveStatus" style="font-size:12px;color:var(--text2);"></span>
+        </div>
+        <div id="proxyList" style="margin-top:14px;"></div>
+    </div>
+</div>
+
+<!-- SETTINGS TAB -->
+<div id="settingsTab">
+    <div class="panel-inner">
+        <h2>🛠️ Настройки сайта</h2>
+        <p style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.6;">
+            Здесь собраны все значения, которые раньше были зашиты прямо в коде (сервер по умолчанию,
+            команды авто-бала/авто-хила, пороги слежения за координатами, шаблоны авто-логина).
+            Меняются на лету, без перезапуска <code style="background:var(--bg3);padding:1px 5px;border-radius:4px;">npm start</code>.
+        </p>
+
+        <div class="section-label">Сервер по умолчанию</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+            <div><label style="font-size:11px;color:var(--text2);">Хост</label><br>
+                <input id="setDefaultHost" style="width:180px"></div>
+            <div><label style="font-size:11px;color:var(--text2);">Порт</label><br>
+                <input id="setDefaultPort" type="number" style="width:100px"></div>
+            <div><label style="font-size:11px;color:var(--text2);">Версия</label><br>
+                <input id="setDefaultVersion" style="width:100px"></div>
+        </div>
+
+        <div class="section-label">Авто-бал</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+            <div><label style="font-size:11px;color:var(--text2);">Команда проверки баланса</label><br>
+                <input id="setAutoBalCommand" style="width:120px"></div>
+            <div><label style="font-size:11px;color:var(--text2);">Команда инвеста (<code>{amount}</code> = сумма)</label><br>
+                <input id="setAutoBalInvestCommand" style="width:220px"></div>
+            <div><label style="font-size:11px;color:var(--text2);">Интервал, сек</label><br>
+                <input id="setAutoBalIntervalSec" type="number" style="width:90px"></div>
+        </div>
+
+        <div class="section-label">Авто-хил</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+            <div><label style="font-size:11px;color:var(--text2);">Команда</label><br>
+                <input id="setAutoHealCommand" style="width:120px"></div>
+            <div><label style="font-size:11px;color:var(--text2);">Интервал, сек</label><br>
+                <input id="setAutoHealIntervalSec" type="number" style="width:90px"></div>
+        </div>
+
+        <div class="section-label">🛒 Автоскупщик</div>
+        <p style="font-size:11px;color:var(--text2);margin:2px 0 6px;">
+            Настройки по умолчанию — можно переопределить в плашке каждого бота.
+        </p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+            <div><label style="font-size:11px;color:var(--text2);">Слоты (через запятую)</label><br>
+                <input id="setAutoShopSlots" placeholder="12,13" style="width:130px"></div>
+            <div><label style="font-size:11px;color:var(--text2);">Кнопка</label><br>
+                <select id="setAutoShopButton" style="width:80px">
+                    <option value="0">ЛКМ</option>
+                    <option value="1">ПКМ</option>
+                </select></div>
+            <div><label style="font-size:11px;color:var(--text2);">Задержка между кликами, мс</label><br>
+                <input id="setAutoShopDelay" type="number" min="50" style="width:100px"></div>
+            <div><label style="font-size:11px;color:var(--text2);">Пауза между циклами, мс</label><br>
+                <input id="setAutoShopCycleDelay" type="number" min="100" style="width:100px"></div>
+        </div>
+
+        <div class="section-label">Авто-payday</div>
+        <p style="font-size:11px;color:var(--text2);margin:2px 0 6px;">
+            Сначала шлётся первая команда (забрать payday), через паузу — вторая (перевод).
+            В команде перевода <code>{target}</code> и <code>{amount}</code> подставляются из полей ниже.
+        </p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+            <div><label style="font-size:11px;color:var(--text2);">Команда payday</label><br>
+                <input id="setAutoPaydayCommand" style="width:130px"></div>
+            <div><label style="font-size:11px;color:var(--text2);">Команда перевода</label><br>
+                <input id="setAutoPaydayPayCommand" style="width:180px"></div>
+            <div><label style="font-size:11px;color:var(--text2);">Кому (target)</label><br>
+                <input id="setAutoPaydayTarget" style="width:120px"></div>
+            <div><label style="font-size:11px;color:var(--text2);">Сумма</label><br>
+                <input id="setAutoPaydayAmount" type="number" style="width:90px"></div>
+            <div><label style="font-size:11px;color:var(--text2);">Интервал, часов</label><br>
+                <input id="setAutoPaydayIntervalHours" type="number" step="0.5" style="width:90px"></div>
+        </div>
+
+        <div class="section-label">Слежение за координатами</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+            <div><label style="font-size:11px;color:var(--text2);">Порог отклонения, блоков</label><br>
+                <input id="setPosWatchThreshold" type="number" style="width:100px"></div>
+            <div><label style="font-size:11px;color:var(--text2);">Повтор макроса, сек</label><br>
+                <input id="setPosWatchRetrySec" type="number" style="width:100px"></div>
+        </div>
+
+        <div class="section-label">Пул прокси</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+            <div><label style="font-size:11px;color:var(--text2);">Лимит ботов на один прокси</label><br>
+                <input id="setProxyLimit" type="number" min="1" style="width:100px"></div>
+        </div>
+
+        <div class="section-label">Авто-логин / регистрация по умолчанию</div>
+        <p style="font-size:11px;color:var(--text2);margin:2px 0 6px;">
+            Общие для всех ботов, если у конкретного бота не задан свой шаблон (вкладка редактирования аккаунта).
+            В командах <code>{password}</code> заменяется на пароль бота.
+        </p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px;">
+            <div><label style="font-size:11px;color:var(--text2);">Команда регистрации</label><br>
+                <input id="setAuthRegisterCommand" style="width:220px"></div>
+            <div><label style="font-size:11px;color:var(--text2);">Команда входа</label><br>
+                <input id="setAuthLoginCommand" style="width:180px"></div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+            <div style="flex:1;min-width:260px;"><label style="font-size:11px;color:var(--text2);">Паттерн "нужна регистрация" (regex, через |)</label><br>
+                <input id="setAuthRegisterPattern" style="width:100%"></div>
+            <div style="flex:1;min-width:260px;"><label style="font-size:11px;color:var(--text2);">Паттерн "нужен логин" (regex, через |)</label><br>
+                <input id="setAuthLoginPattern" style="width:100%"></div>
+        </div>
+
+        <div class="section-label">Скрипт при открытии меню</div>
+        <p style="font-size:11px;color:var(--text2);margin:2px 0 6px;line-height:1.6;">
+            Когда бот откроет меню с таким названием, скрипт выполнится один раз при открытии.
+            Впишите название так, как оно отображается в игре, например <code>▶ Меню подарков</code>.
+            Название сравнивается без учёта регистра; достаточно, чтобы оно содержало указанный текст.
+            Формат скрипта: одна команда на строку, например <code>click:12:0</code> и <code>wait:1000</code>.
+        </p>
+        <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:14px;">
+            <div><label style="font-size:11px;color:var(--text2);">Название меню для скрипта</label><br>
+                <input id="setMenuTitleTrigger" placeholder="▶ Меню подарков" style="width:100%;max-width:420px;"></div>
+            <div><label style="font-size:11px;color:var(--text2);">Скрипт при открытии меню</label><br>
+                <textarea id="setMenuTitleScript" rows="4" placeholder="click:12:0&#10;wait:1000&#10;chat:/home" style="width:100%;max-width:600px;background:var(--bg2);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:6px 8px;font-size:11px;font-family:monospace;resize:vertical;"></textarea></div>
+        </div>
+
+        <div class="section-label">Слова для использования скрипта</div>
+        <p style="font-size:11px;color:var(--text2);margin:2px 0 6px;line-height:1.6;">
+            Если любой бот увидит в чате сообщение со словом/фразой (регистр не важен) — выполнит скрипт.
+            Формат скрипта такой же, как у макроса: <code>chat:/home</code>, <code>wait:1000</code>, <code>click:12:0</code>,
+            <code>look:90:0</code>... По одной команде на строку. <code>{msg}</code> подставит текст сообщения.
+            Одно слово срабатывает не чаще раза в 5 сек.
+        </p>
+        <div id="chatTriggersList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px;"></div>
+        <button class="btn btn-ghost btn-sm" onclick="addChatTrigger()" style="margin-bottom:12px;">➕ Добавить слово</button>
+
+        <div style="display:flex;gap:8px;align-items:center;margin-top:6px;">
+            <button class="btn btn-primary" onclick="saveSiteSettings()">💾 Сохранить</button>
+            <button class="btn btn-ghost" onclick="resetSiteSettings()">↺ Сбросить по умолчанию</button>
+            <span id="settingsSaveStatus" style="font-size:12px;color:var(--text2);"></span>
+        </div>
+    </div>
+</div>
+
+
+<!-- PACKET SENDER TAB -->
+<div id="packetsTab" style="display:none;">
+    <div class="panel-inner">
+        <div class="content-header" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
+            <h2>Packet Sender</h2>
+            <span class="status-badge" id="ps-connection-status">Ожидание мира...</span>
+        </div>
+
+        <div class="grid-container" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;">
+            <div class="card">
+                <h3>Импорт из PacketSpy</h3>
+                <p class="card-desc">Вставьте сырые пакеты или JSON-дамп для проверки и отправки.</p>
+                <textarea id="ps-spy-input" class="textarea-code" placeholder="Вставьте JSON из PacketSpy..." style="width:100%;min-height:180px;box-sizing:border-box;"></textarea>
+                <div class="btn-group" style="margin-top:10px;">
+                    <button id="ps-btn-import" class="btn btn-primary">Импортировать в очередь</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Параметры очереди</h3>
+                <div class="form-row" style="display:flex;gap:12px;flex-wrap:wrap;">
+                    <div class="form-field" style="flex:1;min-width:120px;">
+                        <label for="ps-repeat">Повторы очереди:</label>
+                        <input type="number" id="ps-repeat" value="1" min="1" max="100000" class="input-control">
+                    </div>
+                    <div class="form-field" style="flex:1;min-width:120px;">
+                        <label for="ps-interval">Интервал (мс):</label>
+                        <input type="number" id="ps-interval" value="0" min="0" max="60000" class="input-control">
+                    </div>
+                </div>
+                <div class="form-row stats-row" style="display:flex;gap:14px;flex-wrap:wrap;margin:14px 0;">
+                    <span>Всего пакетов: <strong id="ps-stat-total">0</strong></span>
+                    <span>Отправлено: <strong id="ps-stat-sent">0</strong></span>
+                    <span>Ошибок: <strong id="ps-stat-errors" style="color:var(--danger-color,#ff5555);">0</strong></span>
+                </div>
+                <div class="btn-group" style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <button id="ps-btn-send" class="btn btn-success">Отправить на сервер</button>
+                    <button id="ps-btn-stop" class="btn btn-danger">Остановить</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card full-width" style="margin-top:14px;">
+            <h3>Текущая очередь пакетов</h3>
+            <div class="table-responsive" style="overflow-x:auto;">
+                <table class="data-table" id="ps-queue-table" style="width:100%;">
+                    <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Тип пакета</th>
+                        <th>Направление</th>
+                        <th>Поля (JSON / Переменные)</th>
+                        <th>Количество</th>
+                        <th>Статус / Ошибки</th>
+                    </tr>
+                    </thead>
+                    <tbody id="ps-queue-tbody">
+                    <tr class="empty-row"><td colspan="6">Очередь пуста. Импортируйте пакеты выше.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+\n<!-- BOTS GRID -->
+<main id="botsGrid" class="bots-grid"></main>
+
+<!-- MODAL: Add/Edit Account -->
+<div id="modalOverlay" class="modal-overlay hidden" onclick="closeModal()">
+    <div class="modal" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3 id="modalTitle">Добавить аккаунт</h3>
+            <button class="modal-close" onclick="closeModal()">✕</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="editId">
+            <label>Никнейм / Email</label>
+            <input id="mUsername" placeholder="Steve" autocomplete="off">
+
+            <label>Тип авторизации</label>
+            <select id="mAuthType" onchange="togglePasswordField()">
+                <option value="offline">Offline (крякнутый)</option>
+                <option value="microsoft">Microsoft</option>
+                <option value="mojang">Mojang (legacy)</option>
+            </select>
+
+            <div id="passRow">
+                <label>Пароль для входа на сервер (AuthMe, /login) — не пароль от Mojang</label>
+                <input id="mPassword" type="password" placeholder="Пароль" autocomplete="off">
+            </div>
+
+            <div class="section-label" style="color:var(--text2);font-size:11px;border:none;padding-top:4px;">
+                🌐 Прокси назначается автоматически из пула (<a href="#" onclick="switchTab('proxy')" style="color:var(--accent)">вкладка Прокси</a>)
+            </div>
+
+            <div class="section-label">Авто-логин / регистрация</div>
+            <p style="font-size:11px;color:var(--text2);margin:0 0 4px;">
+                Пусто = используются общие настройки сайта (<a href="#" onclick="closeModal();switchTab('settings')" style="color:var(--accent)">вкладка Настройки</a>).
+            </p>
+            <label style="font-size:11px;">Команда регистрации</label>
+            <input id="mAuthRegisterCommand" placeholder="/register {password} {password}">
+            <label style="font-size:11px;margin-top:4px;">Команда входа</label>
+            <input id="mAuthLoginCommand" placeholder="/login {password}">
+
+            <div class="section-label">Автовосстановление</div>
+            <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;">
+                <input type="checkbox" id="mRecOnReconnect"> Запускать макрос после каждого захода
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;margin-top:4px;">
+                <input type="checkbox" id="mRecOnRespawn"> Запускать макрос после смерти / смены мира
+            </label>
+            <label style="margin-top:6px;display:block;font-size:12px;">Шаги макроса (по одному на строку)</label>
+            <textarea id="mRecSequence" rows="5" placeholder="chat:/hub&#10;wait:2000&#10;use&#10;wait:500&#10;click:12:0:0" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:7px;color:var(--text);padding:8px;font-family:monospace;font-size:11px;line-height:1.5;"></textarea>
+            <div style="font-size:11px;color:var(--text2);margin-top:2px;line-height:1.5;">
+                Шаги: <code>chat:текст</code>, <code>wait:мс</code>, <code>click:слот:кнопка:режим</code>, <code>attack</code>, <code>use</code>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="closeModal()">Отмена</button>
+            <button class="btn btn-primary" onclick="saveAccount()">Сохранить</button>
+        </div>
+    </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="app.js"></script>
+<script>
+    // Дополняет существующую навигацию вкладкой Packet Sender.
+    function switchTabWithPackets(tab) {
+        const packetPane = document.getElementById('packetsTab');
+        const packetButton = document.getElementById('tabPackets');
+
+        if (typeof window.switchTab === 'function') {
+            // При открытии Packet Sender сначала переключаемся на штатную вкладку,
+            // чтобы существующий код скрыл остальные панели.
+            window.switchTab(tab === 'packets' ? 'bots' : tab);
+        }
+
+        if (packetPane) packetPane.style.display = tab === 'packets' ? 'block' : 'none';
+
+        if (packetButton) {
+            packetButton.classList.toggle('active', tab === 'packets');
+        }
+        if (tab !== 'packets') {
+            document.querySelectorAll('.header-center .tab-btn').forEach(button => {
+                if (button !== packetButton) button.classList.remove('active');
+            });
+        } else {
+            document.querySelectorAll('.header-center .tab-btn').forEach(button => {
+                if (button !== packetButton) button.classList.remove('active');
+            });
+        }
+    }
+</script>
+</body>
+</html>
